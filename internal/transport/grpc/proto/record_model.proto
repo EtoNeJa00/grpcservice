@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package record;
+
+option go_package = "record/";
+
+message Record {
+    string id = 1;
+    string data = 2;
+}
+
+message Id {
+  string id = 1;
+}

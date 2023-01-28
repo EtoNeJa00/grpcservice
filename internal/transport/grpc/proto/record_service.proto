@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package record;
+
+import "record_model.proto";
+
+option go_package = "record/";
+
+service Records {
+  rpc Get(Id) returns (Record) {}
+  rpc Set(Record) returns (Record) {}
+  rpc Delete(Id) returns (Record) {}
+}
