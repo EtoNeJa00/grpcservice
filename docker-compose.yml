@@ -12,3 +12,5 @@ services:
       - "8080:8080"
     depends_on:
       - memcached
+    environment:
+      MEMCACHED_ADDR: "memcached:11211"
