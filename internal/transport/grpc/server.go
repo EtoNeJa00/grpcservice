@@ -6,6 +6,8 @@ import (
 
 	"google.golang.org/grpc"
 
+	"google.golang.org/grpc/reflection"
+
 	"github.com/EtoNeJa00/GRPCService/internal/endpoints"
 	"github.com/EtoNeJa00/GRPCService/internal/transport/grpc/generated/record"
 )
@@ -41,6 +43,7 @@ func (s *gRPCServer) StartServer() (err error) {
 	s.grpcServer = grpc.NewServer(opts...)
 
 	record.RegisterRecordsServer(s.grpcServer, s.enp)
+	reflection.Register(s.grpcServer)
 
 	return s.grpcServer.Serve(listener)
 }
