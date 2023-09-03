@@ -1,4 +1,4 @@
-package inner_storage
+package innerstorage
 
 import (
 	"testing"
@@ -32,6 +32,6 @@ func TestInnerStorage(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, updData, resData)
 
-	resData, err = is.Get(id)
+	_, err = is.Get(id)
 	require.ErrorIs(t, err, ErrNotFound)
 }

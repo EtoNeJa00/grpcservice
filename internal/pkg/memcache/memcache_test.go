@@ -18,6 +18,7 @@ type memcacheTestSuite struct {
 
 func (t *memcacheTestSuite) SetupSuite() {
 	t.ctx = context.Background()
+
 	defer func() {
 		if err := recover(); err != nil {
 			t.T().Error(err)
@@ -73,6 +74,6 @@ func (t *memcacheTestSuite) TestMC() {
 	err = t.mc.Delete(resSet)
 	t.Require().NoError(err)
 
-	resGet, err = t.mc.Get(resSet)
+	_, err = t.mc.Get(resSet)
 	t.ErrorIs(err, ErrNotFound)
 }

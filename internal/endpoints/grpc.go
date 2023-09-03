@@ -30,12 +30,12 @@ func NewEndpoint(ctx context.Context, uc usecase.Usecase) GrpcEnp {
 }
 
 func (e grpcEnp) Get(ctx context.Context, id *record.Id) (*record.Record, error) {
-	idUuid, err := uuid.Parse(id.GetId())
+	idUUID, err := uuid.Parse(id.GetId())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	rec, err := e.uc.GetRecord(ctx, idUuid)
+	rec, err := e.uc.GetRecord(ctx, idUUID)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, err.Error())
 	}
@@ -58,12 +58,12 @@ func (e grpcEnp) Set(ctx context.Context, r *record.Record) (*record.Record, err
 }
 
 func (e grpcEnp) Delete(ctx context.Context, id *record.Id) (*record.Record, error) {
-	idUuid, err := uuid.Parse(id.GetId())
+	idUUID, err := uuid.Parse(id.GetId())
 	if err != nil {
 		return nil, err
 	}
 
-	rec, err := e.uc.DeleteRecord(ctx, idUuid)
+	rec, err := e.uc.DeleteRecord(ctx, idUUID)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, err.Error())
 	}
@@ -73,7 +73,7 @@ func (e grpcEnp) Delete(ctx context.Context, id *record.Id) (*record.Record, err
 
 func (e grpcEnp) ToPBRecord(r models.Record) *record.Record {
 	return &record.Record{
-		Id:   r.Id.String(),
+		Id:   r.ID.String(),
 		Data: r.Data,
 	}
 }
@@ -85,7 +85,7 @@ func (e grpcEnp) FromPBRecord(r *record.Record) (models.Record, error) {
 	}
 
 	return models.Record{
-		Id:   id,
+		ID:   id,
 		Data: r.GetData(),
 	}, err
 }

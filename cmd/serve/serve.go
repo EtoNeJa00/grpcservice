@@ -21,10 +21,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	select {
-	case <-ctx.Done():
-		log.Print("cancelled")
-	}
+	<-ctx.Done()
+
+	log.Print("cancelled")
 
 	stop()
 }

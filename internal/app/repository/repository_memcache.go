@@ -32,14 +32,14 @@ func (m *repositoryMemcache) GetRecord(_ context.Context, id uuid.UUID) (models.
 	}
 
 	return models.Record{
-		Id:   id,
+		ID:   id,
 		Data: string(records[0]),
 	}, nil
 }
 
 func (m *repositoryMemcache) SetRecord(ctx context.Context, record models.Record) (models.Record, error) {
-	if record.Id != uuid.Nil {
-		res, err := m.GetRecord(ctx, record.Id)
+	if record.ID != uuid.Nil {
+		res, err := m.GetRecord(ctx, record.ID)
 		if errors.Is(err, memcache.ErrNotFound) {
 			return m.createRecord(record)
 		} else if err != nil {
@@ -52,8 +52,8 @@ func (m *repositoryMemcache) SetRecord(ctx context.Context, record models.Record
 	return m.createRecord(record)
 }
 
-func (m *repositoryMemcache) updateRecord(res models.Record, record models.Record) (models.Record, error) {
-	err := m.mc.Delete(res.Id)
+func (m *repositoryMemcache) updateRecord(res, record models.Record) (models.Record, error) {
+	err := m.mc.Delete(res.ID)
 	if err != nil {
 		return models.Record{}, err
 	}
@@ -67,7 +67,7 @@ func (m *repositoryMemcache) createRecord(record models.Record) (models.Record, 
 		return models.Record{}, err
 	}
 
-	return models.Record{Id: id, Data: record.Data}, err
+	return models.Record{ID: id, Data: record.Data}, err
 }
 
 func (m *repositoryMemcache) DeleteRecord(ctx context.Context, id uuid.UUID) (models.Record, error) {

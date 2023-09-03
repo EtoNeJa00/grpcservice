@@ -7,11 +7,11 @@ import (
 
 	"GRPCService/internal/app/repository"
 	"GRPCService/internal/app/usecase"
-	"GRPCService/internal/app/utilities/prom_metrics"
+	"GRPCService/internal/app/utilities/prommetrics"
 	"GRPCService/internal/config"
 	"GRPCService/internal/endpoints"
 	"GRPCService/internal/transport/grpc"
-	"GRPCService/internal/transport/http_transport"
+	"GRPCService/internal/transport/httptransport"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -20,7 +20,11 @@ func StartApp(ctx context.Context, conf config.Config) (func(), error) {
 	var servers []grpc.GRPCServer
 
 	reg := prometheus.NewRegistry()
-	m, err := prom_metrics.CreateMetrics(reg)
+
+	m, err := prommetrics.CreateMetrics(reg)
+	if err != nil {
+		return nil, err
+	}
 
 	serverMC, err := startMCApp(ctx, conf, m)
 	if err != nil {
@@ -34,7 +38,7 @@ func StartApp(ctx context.Context, conf config.Config) (func(), error) {
 		return nil, err
 	}
 
-	http_transport.Start(reg, conf)
+	httptransport.Start(reg, conf)
 
 	servers = append(servers, serverIS)
 
@@ -55,11 +59,11 @@ func StartApp(ctx context.Context, conf config.Config) (func(), error) {
 	}, nil
 }
 
-func startISApp(ctx context.Context, conf config.Config, m *prom_metrics.Metrics) (grpc.GRPCServer, error) {
+func startISApp(ctx context.Context, conf config.Config, m *prommetrics.Metrics) (grpc.GRPCServer, error) {
 	r := repository.NewInnerStorageRepository()
 	uc := usecase.NewUsecase(r)
 
-	PromUC, err := prom_metrics.NewPrometheusMiddleware(uc, m, "internal_storage")
+	PromUC, err := prommetrics.NewPrometheusMiddleware(uc, m, "internal_storage")
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +77,7 @@ func startISApp(ctx context.Context, conf config.Config, m *prom_metrics.Metrics
 	return sr, err
 }
 
-func startMCApp(ctx context.Context, conf config.Config, m *prom_metrics.Metrics) (grpc.GRPCServer, error) {
+func startMCApp(ctx context.Context, conf config.Config, m *prommetrics.Metrics) (grpc.GRPCServer, error) {
 	r, err := repository.NewMemcacheRepository(conf.MCServerAddr)
 	if err != nil {
 		return nil, err
@@ -81,7 +85,7 @@ func startMCApp(ctx context.Context, conf config.Config, m *prom_metrics.Metrics
 
 	uc := usecase.NewUsecase(r)
 
-	PromUC, err := prom_metrics.NewPrometheusMiddleware(uc, m, "memcached_storage")
+	PromUC, err := prommetrics.NewPrometheusMiddleware(uc, m, "memcached_storage")
 	if err != nil {
 		return nil, err
 	}

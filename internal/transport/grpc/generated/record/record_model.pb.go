@@ -110,7 +110,7 @@ func (x *Id) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Id.ProtoReflect.Descriptor instead.
+// Deprecated: Use ID.ProtoReflect.Descriptor instead.
 func (*Id) Descriptor() ([]byte, []int) {
 	return file_record_model_proto_rawDescGZIP(), []int{1}
 }
@@ -150,7 +150,7 @@ func file_record_model_proto_rawDescGZIP() []byte {
 var file_record_model_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_record_model_proto_goTypes = []interface{}{
 	(*Record)(nil), // 0: record.Record
-	(*Id)(nil),     // 1: record.Id
+	(*Id)(nil),     // 1: record.ID
 }
 var file_record_model_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type

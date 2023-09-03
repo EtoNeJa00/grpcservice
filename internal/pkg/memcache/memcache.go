@@ -48,6 +48,7 @@ func (mc memCache) Set(data []byte) (uuid.UUID, error) {
 	if err != nil {
 		return uuid.UUID{}, err
 	}
+
 	defer func() {
 		errC := conn.Close()
 		if err == nil {
@@ -57,7 +58,7 @@ func (mc memCache) Set(data []byte) (uuid.UUID, error) {
 
 	id := uuid.New()
 
-	_, err = conn.Write([]byte(fmt.Sprintf("set %s 0 0 %d\r\n%s\r\n", id.String(), len(data), data)))
+	_, err = fmt.Fprintf(conn, "set %s 0 0 %d\r\n%s\r\n", id.String(), len(data), data)
 	if err != nil {
 		return uuid.UUID{}, err
 	}
@@ -81,6 +82,7 @@ func (mc memCache) Get(id uuid.UUID) ([][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	defer func() {
 		errC := conn.Close()
 		if err == nil {
@@ -88,7 +90,7 @@ func (mc memCache) Get(id uuid.UUID) ([][]byte, error) {
 		}
 	}()
 
-	_, err = conn.Write([]byte(fmt.Sprintf("get %s\r\n", id.String())))
+	_, err = fmt.Fprintf(conn, "get %s\r\n", id.String())
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +132,7 @@ func (mc memCache) Delete(id uuid.UUID) error {
 		return err
 	}
 
-	_, err = conn.Write([]byte(fmt.Sprintf("delete %s\r\n", id.String())))
+	_, err = fmt.Fprintf(conn, "delete %s\r\n", id.String())
 	if err != nil {
 		return err
 	}

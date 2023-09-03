@@ -17,7 +17,6 @@ type GRPCServer interface {
 
 type gRPCServer struct {
 	enp        endpoints.GrpcEnp
-	listener   net.Listener
 	grpcServer *grpc.Server
 	port       string
 }

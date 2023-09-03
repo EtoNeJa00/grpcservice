@@ -5,6 +5,6 @@ import (
 )
 
 type Record struct {
-	Id   uuid.UUID
+	ID   uuid.UUID
 	Data string
 }

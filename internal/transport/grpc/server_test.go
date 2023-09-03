@@ -5,14 +5,14 @@ import (
 	"errors"
 	"testing"
 
+	"GRPCService/internal/app/mock"
+	"GRPCService/internal/transport/grpc/generated/record"
+
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-
-	"github.com/EtoNeJa00/GRPCService/internal/app/mock"
-	"github.com/EtoNeJa00/GRPCService/internal/transport/grpc/generated/record"
 )
 
 type grpcServerTestSuite struct {
@@ -34,6 +34,7 @@ func (g *grpcServerTestSuite) SetupSuite() {
 
 	g.grpcS, err = NewGRPCServer(g.port, g.mockEnp)
 	g.Require().NoError(err)
+
 	go func() {
 		err := g.grpcS.StartServer()
 		g.Require().NoError(err)
@@ -71,7 +72,7 @@ func (g *grpcServerTestSuite) TestGrpc() {
 
 	g.testGet(id, data, client)
 
-	g.testDelete(id, data, err, client)
+	g.testDelete(id, data, client)
 }
 
 func (g *grpcServerTestSuite) testSet(data string, id uuid.UUID, client record.RecordsClient, request *record.Record) {
@@ -87,6 +88,7 @@ func (g *grpcServerTestSuite) testSet(data string, id uuid.UUID, client record.R
 	})
 
 	response, err := client.Set(g.ctx, request)
+
 	g.Require().NoError(err)
 	g.Require().EqualValues(id.String(), response.Id)
 }
@@ -103,14 +105,15 @@ func (g *grpcServerTestSuite) testGet(id uuid.UUID, data string, client record.R
 		}, nil
 	})
 
-	reqId := record.Id{Id: id.String()}
+	reqID := record.Id{Id: id.String()}
 
-	response, err := client.Get(g.ctx, &reqId)
+	response, err := client.Get(g.ctx, &reqID)
+
 	g.Require().NoError(err)
 	g.Require().EqualValues(id.String(), response.Id)
 }
 
-func (g *grpcServerTestSuite) testDelete(id uuid.UUID, data string, err error, client record.RecordsClient) {
+func (g *grpcServerTestSuite) testDelete(id uuid.UUID, data string, client record.RecordsClient) {
 	g.mockEnp.EXPECT().Delete(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, r *record.Id) (*record.Record, error) {
 		if r.GetId() != id.String() {
 			return nil, errors.New("")
@@ -122,9 +125,10 @@ func (g *grpcServerTestSuite) testDelete(id uuid.UUID, data string, err error, c
 		}, nil
 	})
 
-	reqId := record.Id{Id: id.String()}
+	reqID := record.Id{Id: id.String()}
 
-	response, err := client.Delete(g.ctx, &reqId)
+	response, err := client.Delete(g.ctx, &reqID)
+
 	g.Require().NoError(err)
 	g.Require().EqualValues(id.String(), response.Id)
 }

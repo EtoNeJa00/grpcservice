@@ -1,4 +1,4 @@
-package inner_storage
+package innerstorage
 
 import (
 	"errors"
@@ -43,11 +43,11 @@ func (s *innerStorage) Get(id uuid.UUID) (string, error) {
 	return v, nil
 }
 
-func (s *innerStorage) Create(record string) (uuid.UUID, string) {
+func (s *innerStorage) Create(record string) (id uuid.UUID, recordResult string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	id := uuid.New()
+	id = uuid.New()
 	s.storage[id] = record
 
 	return id, record

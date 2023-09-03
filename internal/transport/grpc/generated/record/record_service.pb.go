@@ -38,13 +38,13 @@ var file_record_service_proto_rawDesc = []byte{
 }
 
 var file_record_service_proto_goTypes = []interface{}{
-	(*Id)(nil),     // 0: record.Id
+	(*Id)(nil),     // 0: record.ID
 	(*Record)(nil), // 1: record.Record
 }
 var file_record_service_proto_depIdxs = []int32{
-	0, // 0: record.Records.Get:input_type -> record.Id
+	0, // 0: record.Records.Get:input_type -> record.ID
 	1, // 1: record.Records.Set:input_type -> record.Record
-	0, // 2: record.Records.Delete:input_type -> record.Id
+	0, // 2: record.Records.Delete:input_type -> record.ID
 	1, // 3: record.Records.Get:output_type -> record.Record
 	1, // 4: record.Records.Set:output_type -> record.Record
 	1, // 5: record.Records.Delete:output_type -> record.Record

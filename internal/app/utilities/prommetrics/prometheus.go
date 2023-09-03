@@ -1,4 +1,4 @@
-package prom_metrics
+package prommetrics
 
 import (
 	"context"
