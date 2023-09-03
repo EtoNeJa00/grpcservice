@@ -3,9 +3,9 @@ package repository
 import (
 	"context"
 
-	"github.com/google/uuid"
+	"GRPCService/internal/models"
 
-	"github.com/EtoNeJa00/GRPCService/internal/models"
+	"github.com/google/uuid"
 )
 
 type Repository interface {

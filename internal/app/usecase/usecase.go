@@ -3,9 +3,8 @@ package usecase
 import (
 	"context"
 
-	"github.com/EtoNeJa00/GRPCService/internal/app/repository"
-
-	"github.com/EtoNeJa00/GRPCService/internal/models"
+	"GRPCService/internal/app/repository"
+	"GRPCService/internal/models"
 
 	"github.com/google/uuid"
 )

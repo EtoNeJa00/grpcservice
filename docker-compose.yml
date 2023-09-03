@@ -10,6 +10,7 @@ services:
     ports:
       - "5300:5300"
       - "8080:8080"
+      - "8888:8888"
     depends_on:
       - memcached
     environment:

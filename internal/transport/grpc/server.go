@@ -1,15 +1,13 @@
 package grpc
 
 import (
-	"log"
 	"net"
 
+	"GRPCService/internal/endpoints"
+	"GRPCService/internal/transport/grpc/generated/record"
+
 	"google.golang.org/grpc"
-
 	"google.golang.org/grpc/reflection"
-
-	"github.com/EtoNeJa00/GRPCService/internal/endpoints"
-	"github.com/EtoNeJa00/GRPCService/internal/transport/grpc/generated/record"
 )
 
 type GRPCServer interface {
@@ -37,9 +35,7 @@ func (s *gRPCServer) StartServer() (err error) {
 		return err
 	}
 
-	log.Printf("service start on:%s\n", listener.Addr())
-
-	opts := []grpc.ServerOption{}
+	var opts []grpc.ServerOption
 	s.grpcServer = grpc.NewServer(opts...)
 
 	record.RegisterRecordsServer(s.grpcServer, s.enp)

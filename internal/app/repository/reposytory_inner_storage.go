@@ -3,14 +3,14 @@ package repository
 import (
 	"context"
 
-	"github.com/EtoNeJa00/GRPCService/internal/models"
-	"github.com/EtoNeJa00/GRPCService/internal/pkg/inner_storage"
+	"GRPCService/internal/models"
+	"GRPCService/internal/pkg/inner_storage"
 
 	"github.com/google/uuid"
 )
 
-func NewInnerStorageRepository(ctx context.Context) Repository {
-	return &ISRRepository{iStorage: inner_storage.NewInnerStorage(ctx)}
+func NewInnerStorageRepository() Repository {
+	return &ISRRepository{iStorage: inner_storage.NewInnerStorage()}
 }
 
 type ISRRepository struct {

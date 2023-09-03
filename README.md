@@ -17,6 +17,8 @@ localhost:5300 внутреннее хранилище
 
 localhost:8080 memcached хранилище
 
+localhost:8888/metrics prometheus метрики
+
 
 ## Доступные команды
 Для общения с сервисом необходим gRPC клиент.

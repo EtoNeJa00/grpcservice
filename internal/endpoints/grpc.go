@@ -5,13 +5,13 @@ package endpoints
 import (
 	"context"
 
+	"GRPCService/internal/app/usecase"
+	"GRPCService/internal/models"
+	"GRPCService/internal/transport/grpc/generated/record"
+
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	"github.com/EtoNeJa00/GRPCService/internal/app/usecase"
-	"github.com/EtoNeJa00/GRPCService/internal/models"
-	"github.com/EtoNeJa00/GRPCService/internal/transport/grpc/generated/record"
 )
 
 type GrpcEnp interface {

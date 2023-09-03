@@ -1,14 +1,13 @@
 package inner_storage
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestInnerStorage(t *testing.T) {
-	is := NewInnerStorage(context.Background())
+	is := NewInnerStorage()
 
 	data := "string"
 

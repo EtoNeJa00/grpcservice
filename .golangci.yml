@@ -1,0 +1,42 @@
+linters:
+  target: internal/...
+  disable-all: true
+  enable:
+    - govet
+    - errcheck
+    - staticcheck
+    - unused
+    - gosimple
+    - ineffassign
+    - bodyclose
+    - stylecheck
+    - unconvert
+    - goconst
+    - gocyclo
+    - gocognit
+    - gofmt
+    - misspell
+    - dogsled
+    - nakedret
+    - prealloc
+    - gocritic
+    - whitespace
+    - wsl
+    - errorlint
+    - goimports
+    - nilerr
+    - nilnil
+    - predeclared
+    - unparam
+    - usestdlibvars
+
+linters-settings:
+  gofmt:
+    simplify: true
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style

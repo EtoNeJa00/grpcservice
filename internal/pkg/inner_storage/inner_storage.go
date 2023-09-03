@@ -1,7 +1,6 @@
 package inner_storage
 
 import (
-	"context"
 	"errors"
 	"sync"
 
@@ -23,18 +22,18 @@ type InnerStorage interface {
 
 type innerStorage struct {
 	storage map[uuid.UUID]string
-	mu      sync.Mutex
+	mu      sync.RWMutex
 }
 
-func NewInnerStorage(ctx context.Context) InnerStorage {
+func NewInnerStorage() InnerStorage {
 	return &innerStorage{
 		storage: map[uuid.UUID]string{},
 	}
 }
 
 func (s *innerStorage) Get(id uuid.UUID) (string, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
 	v, ok := s.storage[id]
 	if !ok {

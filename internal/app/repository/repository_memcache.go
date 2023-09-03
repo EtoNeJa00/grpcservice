@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 
-	"github.com/google/uuid"
+	"GRPCService/internal/models"
+	"GRPCService/internal/pkg/memcache"
 
-	"github.com/EtoNeJa00/GRPCService/internal/models"
-	"github.com/EtoNeJa00/GRPCService/internal/pkg/memcache"
+	"github.com/google/uuid"
 )
 
 type repositoryMemcache struct {
@@ -64,7 +64,7 @@ func (m *repositoryMemcache) updateRecord(res models.Record, record models.Recor
 func (m *repositoryMemcache) createRecord(record models.Record) (models.Record, error) {
 	id, err := m.mc.Set([]byte(record.Data))
 	if err != nil {
-		return models.Record{}, nil
+		return models.Record{}, err
 	}
 
 	return models.Record{Id: id, Data: record.Data}, err
