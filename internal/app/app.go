@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"log"
 
+	"GRPCService/config"
 	"GRPCService/internal/app/repository"
 	"GRPCService/internal/app/usecase"
 	"GRPCService/internal/app/utilities/prommetrics"
-	"GRPCService/internal/config"
 	"GRPCService/internal/endpoints"
 	"GRPCService/internal/transport/grpc"
 	"GRPCService/internal/transport/httptransport"
@@ -16,7 +16,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-func StartApp(ctx context.Context, conf config.Config) (func(), error) {
+func StartApp(ctx context.Context, conf *config.Config) (func(), error) {
 	var servers []grpc.GRPCServer
 
 	reg := prometheus.NewRegistry()
@@ -38,9 +38,16 @@ func StartApp(ctx context.Context, conf config.Config) (func(), error) {
 		return nil, err
 	}
 
-	httptransport.Start(reg, conf)
-
 	servers = append(servers, serverIS)
+
+	serverSc, err := startScApp(ctx, conf, m)
+	if err != nil {
+		return nil, err
+	}
+
+	servers = append(servers, serverSc)
+
+	httptransport.Start(reg, conf)
 
 	for _, s := range servers {
 		s := s
@@ -54,12 +61,12 @@ func StartApp(ctx context.Context, conf config.Config) (func(), error) {
 
 	return func() {
 		for _, s := range servers {
-			(s).StopServer()
+			s.StopServer()
 		}
 	}, nil
 }
 
-func startISApp(ctx context.Context, conf config.Config, m *prommetrics.Metrics) (grpc.GRPCServer, error) {
+func startISApp(ctx context.Context, conf *config.Config, m *prommetrics.Metrics) (grpc.GRPCServer, error) {
 	r := repository.NewInnerStorageRepository()
 	uc := usecase.NewUsecase(r)
 
@@ -77,7 +84,7 @@ func startISApp(ctx context.Context, conf config.Config, m *prommetrics.Metrics)
 	return sr, err
 }
 
-func startMCApp(ctx context.Context, conf config.Config, m *prommetrics.Metrics) (grpc.GRPCServer, error) {
+func startMCApp(ctx context.Context, conf *config.Config, m *prommetrics.Metrics) (grpc.GRPCServer, error) {
 	r, err := repository.NewMemcacheRepository(conf.MCServerAddr)
 	if err != nil {
 		return nil, err
@@ -94,6 +101,27 @@ func startMCApp(ctx context.Context, conf config.Config, m *prommetrics.Metrics)
 	sr, err := grpc.NewGRPCServer(conf.PortMC, enp)
 
 	log.Printf("start grpc memcached server on: " + conf.PortMC)
+
+	return sr, err
+}
+
+func startScApp(ctx context.Context, conf *config.Config, m *prommetrics.Metrics) (grpc.GRPCServer, error) {
+	r, err := repository.NewScyllaRepository(ctx, conf.ScyllaAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	uc := usecase.NewUsecase(r)
+
+	PromUC, err := prommetrics.NewPrometheusMiddleware(uc, m, "scylla_storage")
+	if err != nil {
+		return nil, err
+	}
+
+	enp := endpoints.NewEndpoint(ctx, PromUC)
+	sr, err := grpc.NewGRPCServer(conf.PortSc, enp)
+
+	log.Printf("start grpc scylla server on: " + conf.PortSc)
 
 	return sr, err
 }

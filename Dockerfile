@@ -12,6 +12,7 @@ RUN go mod download
 # Copy the go source
 COPY cmd/ cmd/
 COPY internal/ internal/
+COPY config/ config/
 
 # Build
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o grpcsevice cmd/serve/serve.go
@@ -19,9 +20,11 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o grpcsevice cmd/serve/se
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM gcr.io/distroless/static:nonroot
-ENV INTERNAL_STORAGE_GRPC_PORT=":5300"
-ENV MEMCACHE_GRPC_PORT=":8080"
+ENV MEMCACHE_GRPC_PORT: ":8081"
+ENV INTERNAL_STORAGE_GRPC_PORT: ":8080"
+ENV SCYLLA_GRPC_PORT: ":8082"
 ENV MEMCACHED_ADDR="localhost:11211"
+ENV SCYLLA_DB="localhost:9042"
 WORKDIR /
 COPY --from=builder /workspace/grpcsevice .
 

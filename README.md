@@ -13,9 +13,11 @@ docker-compose==2.15.1-1
 
 API доступно на:
 
-localhost:5300 внутреннее хранилище
+localhost:8080 внутреннее хранилище
 
-localhost:8080 memcached хранилище
+localhost:8081 memcached хранилище
+
+localhost:8081 scylla хранилище
 
 localhost:8888/metrics prometheus метрики
 

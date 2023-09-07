@@ -4,8 +4,8 @@ import (
 	"context"
 	"log"
 
+	"GRPCService/config"
 	"GRPCService/internal/app"
-	"GRPCService/internal/config"
 )
 
 func main() {
