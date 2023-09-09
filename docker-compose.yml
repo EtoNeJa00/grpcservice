@@ -36,5 +36,6 @@ services:
       MEMCACHE_GRPC_PORT: ":8081"
       INTERNAL_STORAGE_GRPC_PORT: ":8080"
       SCYLLA_GRPC_PORT: ":8082"
+      HTTP_PORT: ":8888"
       MEMCACHED_ADDR: "memcached:11211"
       SCYLLA_DB: "scylla:9042"

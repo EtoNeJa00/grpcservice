@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM golang:1.19 as builder
+FROM golang:1.20 as builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
@@ -23,6 +23,7 @@ FROM gcr.io/distroless/static:nonroot
 ENV MEMCACHE_GRPC_PORT: ":8081"
 ENV INTERNAL_STORAGE_GRPC_PORT: ":8080"
 ENV SCYLLA_GRPC_PORT: ":8082"
+ENV HTTP_PORT: ":8082"
 ENV MEMCACHED_ADDR="localhost:11211"
 ENV SCYLLA_DB="localhost:9042"
 WORKDIR /

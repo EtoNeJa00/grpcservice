@@ -37,7 +37,7 @@ func (t *memcacheTestSuite) SetupSuite() {
 	})
 
 	t.Require().NoError(err)
-	time.Sleep(5 * time.Second)
+	time.Sleep(10 * time.Second)
 
 	ip, err := c.Host(t.ctx)
 	t.Require().NoError(err)

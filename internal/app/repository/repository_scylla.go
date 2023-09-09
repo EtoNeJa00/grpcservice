@@ -2,99 +2,21 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"GRPCService/internal/models"
-	"GRPCService/internal/models/generated/scyllat"
 
 	"github.com/gocql/gocql"
 	"github.com/google/uuid"
-	"github.com/scylladb/gocqlx/v2"
-	"github.com/scylladb/gocqlx/v2/table"
 )
-
-//go:generate go run github.com/scylladb/gocqlx/v2/cmd/schemagen --cluster=localhost --keyspace=grpcservice --output=../../models/generated/scyllat --pkgname=scyllat
 
 const keySpace = "grpcservice"
 
+var ErrNotFound = errors.New("not found")
+
 type repositoryScylla struct {
-	ses gocqlx.Session
-	st  *table.Table
-}
-
-func (r repositoryScylla) GetRecord(ctx context.Context, id uuid.UUID) (models.Record, error) {
-	recordS := scyllat.RecordsStruct{
-		Id: id,
-	}
-
-	err := r.ses.Query(r.st.Get()).BindStruct(recordS).WithContext(ctx).GetRelease(&recordS)
-	if err != nil {
-		return models.Record{}, fmt.Errorf("scylla select: %w", err)
-	}
-
-	return models.Record{
-		ID:   recordS.Id,
-		Data: recordS.Record,
-	}, nil
-}
-
-func (r repositoryScylla) SetRecord(ctx context.Context, record models.Record) (models.Record, error) {
-	recordS := scyllat.RecordsStruct{
-		Id:     record.ID,
-		Record: record.Data,
-	}
-
-	if record.ID != uuid.Nil {
-		return r.update(ctx, recordS)
-	}
-
-	return r.insert(ctx, recordS)
-}
-
-func (r repositoryScylla) insert(ctx context.Context, recordS scyllat.RecordsStruct) (models.Record, error) {
-	recordS.Id = uuid.New()
-
-	err := r.ses.Query(r.st.Insert()).BindStruct(&recordS).WithContext(ctx).ExecRelease()
-	if err != nil {
-		return models.Record{}, err
-	}
-
-	return models.Record{
-		ID:   recordS.Id,
-		Data: recordS.Record,
-	}, nil
-}
-
-func (r repositoryScylla) update(ctx context.Context, recordS scyllat.RecordsStruct) (models.Record, error) {
-	err := r.st.UpdateQuery(r.ses, r.st.Metadata().Columns[1:]...).BindStruct(&recordS).WithContext(ctx).ExecRelease()
-	if err != nil {
-		return models.Record{}, err
-	}
-
-	return models.Record{
-		ID:   recordS.Id,
-		Data: recordS.Record,
-	}, err
-}
-
-func (r repositoryScylla) DeleteRecord(ctx context.Context, id uuid.UUID) (models.Record, error) {
-	rec, err := r.GetRecord(ctx, id)
-	if err != nil {
-		return models.Record{}, err
-	}
-
-	recordS := scyllat.RecordsStruct{
-		Id: rec.ID,
-	}
-
-	if err = r.ses.Query(r.st.Delete()).BindStruct(recordS).WithContext(ctx).ExecRelease(); err != nil {
-		return models.Record{}, fmt.Errorf("scylla delete: %w", err)
-	}
-
-	return models.Record{
-		ID:   rec.ID,
-		Data: rec.Data,
-	}, nil
+	ses *gocql.Session
 }
 
 func NewScyllaRepository(ctx context.Context, addr string) (Repository, error) {
@@ -102,7 +24,7 @@ func NewScyllaRepository(ctx context.Context, addr string) (Repository, error) {
 	cluster.Consistency = gocql.Quorum
 	cluster.Keyspace = keySpace
 
-	session, err := gocqlx.WrapSession(cluster.CreateSession())
+	session, err := cluster.CreateSession()
 	if err != nil {
 		return nil, err
 	}
@@ -113,5 +35,71 @@ func NewScyllaRepository(ctx context.Context, addr string) (Repository, error) {
 		session.Close()
 	}()
 
-	return repositoryScylla{ses: session, st: scyllat.Records}, nil
+	return repositoryScylla{ses: session}, nil
+}
+
+func (r repositoryScylla) GetRecord(ctx context.Context, id uuid.UUID) (rec models.Record, err error) {
+	it := r.ses.Query("SELECT record FROM records WHERE id=?;", id.String()).WithContext(ctx).Iter()
+
+	defer func() {
+		errI := it.Close()
+		if errI != nil {
+			err = errI
+		}
+	}()
+
+	var record *string
+
+	it.Scan(&record)
+
+	if record == nil {
+		return models.Record{}, ErrNotFound
+	}
+
+	return models.Record{
+		ID:   id,
+		Data: *record,
+	}, nil
+}
+
+func (r repositoryScylla) SetRecord(ctx context.Context, record models.Record) (models.Record, error) {
+	if record.ID != uuid.Nil {
+		return record, r.update(ctx, record)
+	}
+
+	return r.insert(ctx, record)
+}
+
+func (r repositoryScylla) insert(ctx context.Context, record models.Record) (models.Record, error) {
+	record.ID = uuid.New()
+
+	if err := r.ses.Query(`INSERT INTO records (id, record) VALUES (?, ?);`, record.ID.String(), record.Data).WithContext(ctx).Exec(); err != nil {
+		return models.Record{}, err
+	}
+
+	return record, nil
+}
+
+func (r repositoryScylla) update(ctx context.Context, record models.Record) error {
+	if err := r.ses.Query(`UPDATE records SET record=? WHERE id=?`, record.Data, record.ID.String()).WithContext(ctx).Exec(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r repositoryScylla) DeleteRecord(ctx context.Context, id uuid.UUID) (models.Record, error) {
+	rec, err := r.GetRecord(ctx, id)
+	if err != nil {
+		return models.Record{}, err
+	}
+
+	if err = r.ses.Query(`DELETE record FROM records WHERE id = ?`, id.String()).WithContext(ctx).Exec(); err != nil {
+		return models.Record{}, fmt.Errorf("scylla delete: %w", err)
+	}
+
+	return models.Record{
+		ID:   rec.ID,
+		Data: rec.Data,
+	}, nil
 }

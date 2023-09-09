@@ -1,12 +1,13 @@
 package memcache
 
 import (
-	"bufio"
 	"bytes"
+	"context"
 	"errors"
-	"fmt"
 	"net"
+	"strconv"
 
+	"github.com/buraksezer/connpool"
 	"github.com/google/uuid"
 )
 
@@ -16,7 +17,8 @@ var (
 
 	stored   = []byte("STORED\r\n")
 	end      = []byte("END\r\n")
-	eol      = "\r\n"
+	eol      = []byte("\r\n")
+	eolnb    = []byte("\n")
 	notFound = []byte("NOT_FOUND\r\n")
 )
 
@@ -27,7 +29,7 @@ type MemCache interface {
 }
 
 type memCache struct {
-	addr *net.TCPAddr
+	p connpool.Pool
 }
 
 func NewMemcache(servAddr string) (MemCache, error) {
@@ -36,49 +38,85 @@ func NewMemcache(servAddr string) (MemCache, error) {
 		return nil, err
 	}
 
-	return memCache{addr: tcpAddr}, err
-}
+	p, err := connpool.NewChannelPool(5, 30, func() (net.Conn, error) {
+		return net.DialTCP("tcp", nil, tcpAddr)
+	})
 
-func (mc memCache) connect() (*net.TCPConn, error) {
-	return net.DialTCP("tcp", nil, mc.addr)
+	return memCache{p: p}, err
 }
 
 func (mc memCache) Set(data []byte) (uuid.UUID, error) {
-	conn, err := mc.connect()
+	conn, err := mc.p.Get(context.Background())
 	if err != nil {
 		return uuid.UUID{}, err
 	}
 
 	defer func() {
 		errC := conn.Close()
-		if err == nil {
+		if errC != nil {
 			err = errC
 		}
 	}()
 
 	id := uuid.New()
 
-	_, err = fmt.Fprintf(conn, "set %s 0 0 %d\r\n%s\r\n", id.String(), len(data), data)
+	_, err = conn.Write([]byte("set " + id.String() + " 0 0 " + strconv.Itoa(len(data)) + "\r\n" + string(data) + "\r\n"))
 	if err != nil {
 		return uuid.UUID{}, err
 	}
 
-	connReader := bufio.NewReader(conn)
-
-	reply, err := connReader.ReadSlice('\n')
+	msg, err := mc.readMsg(conn, make([]byte, 8))
 	if err != nil {
 		return uuid.UUID{}, err
 	}
 
-	if bytes.Equal(reply, stored) {
+	if bytes.Equal(msg, stored) {
 		return id, nil
 	}
 
 	return uuid.UUID{}, ErrNotStored
 }
 
+func (mc memCache) readMsg(conn net.Conn, buffer []byte) ([]byte, error) {
+	var msg []byte
+
+	for {
+		n, err := conn.Read(buffer)
+		if err != nil {
+			return nil, err
+		}
+
+		msg = append(msg, buffer[:n]...)
+
+		if bytes.Equal(msg[len(msg)-2:], eol) {
+			break
+		}
+	}
+
+	return msg, nil
+}
+
+func (mc memCache) readMultilineMsg(conn net.Conn, buffer []byte) ([]byte, error) {
+	var msg []byte
+
+	for {
+		n, err := conn.Read(buffer)
+		if err != nil {
+			return nil, err
+		}
+
+		msg = append(msg, buffer[:n]...)
+
+		if bytes.Equal(msg[len(msg)-5:], end) {
+			break
+		}
+	}
+
+	return msg, nil
+}
+
 func (mc memCache) Get(id uuid.UUID) ([][]byte, error) {
-	conn, err := mc.connect()
+	conn, err := mc.p.Get(context.Background())
 	if err != nil {
 		return nil, err
 	}
@@ -90,61 +128,49 @@ func (mc memCache) Get(id uuid.UUID) ([][]byte, error) {
 		}
 	}()
 
-	_, err = fmt.Fprintf(conn, "get %s\r\n", id.String())
+	_, err = conn.Write([]byte("get " + id.String() + "\r\n"))
 	if err != nil {
 		return nil, err
 	}
 
-	var results [][]byte
-
-	connReader := bufio.NewReader(conn)
-	firstLine := true
-
-	for {
-		line, err := connReader.ReadSlice('\n')
-		if err != nil {
-			return nil, err
-		}
-
-		if bytes.Equal(line, end) {
-			break
-		}
-
-		if firstLine {
-			firstLine = false
-
-			continue
-		}
-
-		results = append(results, bytes.Trim(line, eol))
+	msg, err := mc.readMultilineMsg(conn, make([]byte, 5))
+	if err != nil {
+		return nil, err
 	}
 
-	if len(results) == 0 {
+	response := bytes.Split(msg, eol)
+
+	if len(response) == 0 || len(response) < 3 {
 		return nil, ErrNotFound
 	}
 
-	return results, nil
+	return response[1 : len(response)-1], nil
 }
 
 func (mc memCache) Delete(id uuid.UUID) error {
-	conn, err := mc.connect()
+	conn, err := mc.p.Get(context.Background())
 	if err != nil {
 		return err
 	}
 
-	_, err = fmt.Fprintf(conn, "delete %s\r\n", id.String())
+	defer func() {
+		errC := conn.Close()
+		if err == nil {
+			err = errC
+		}
+	}()
+
+	_, err = conn.Write([]byte("delete " + id.String() + "\r\n"))
 	if err != nil {
 		return err
 	}
 
-	connReader := bufio.NewReader(conn)
-
-	reply, err := connReader.ReadSlice('\n')
+	msg, err := mc.readMsg(conn, make([]byte, 8))
 	if err != nil {
 		return err
 	}
 
-	if bytes.Equal(reply, notFound) {
+	if bytes.Equal(msg, notFound) {
 		return ErrNotFound
 	}
 
